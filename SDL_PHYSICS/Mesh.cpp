@@ -1,5 +1,8 @@
 #include "Mesh.h"
 
+#include <fstream>
+#include <algorithm>
+
 #include <gtc/type_ptr.hpp>
 #include <gtc/matrix_transform.hpp>
 /// 
@@ -10,67 +13,204 @@
 /// 
 
 
-Mesh::Mesh(void)
+Mesh::Mesh(std::string filename)
 {
 	// Initialise variables
 	VAO = 0;
 	numVertices = 0;
 
 	// Create the model
-	InitialiseVAO();
+	LoadMesh(filename);
 }
 
 Mesh::~Mesh(void)
 {
 }
-void Mesh::InitialiseVAO()
+
+void Mesh::LoadMesh(std::string filename)
 {
 		// Creates one VAO
 	glGenVertexArrays( 1, &VAO );
 	// 'Binding' something makes it the current one we are using
 	// This is like activating it, so that subsequent function calls will work on this item
 	glBindVertexArray( VAO );
-	
-	// Simple vertex data for a cube
-	// (actually this is only four sides of a cube, you will have to expand this code if you want a complete cube :P )
-	float vertices[] = {
-		-0.5f, 0.5f, 0.5f,
-		-0.5f,-0.5f, 0.5f,
-		 0.5f, 0.5f, 0.5f,
 
-		-0.5f,-0.5f, 0.5f,
-		 0.5f,-0.5f, 0.5f,
-		 0.5f, 0.5f, 0.5f,
+	// OBJECT LOADER
+	std::ifstream file(filename);
+	unsigned int faceNum = 0;
 
+	while(!file.eof())
+	{
+		char line[256];
 
-		 0.5f, 0.5f, 0.5f,
-		 0.5f,-0.5f, 0.5f,
-		 0.5f, 0.5f,-0.5f,
+		file.getline(line, 256);
 
-		 0.5f,-0.5f, 0.5f,
-		 0.5f,-0.5f,-0.5f,
-		 0.5f, 0.5f,-0.5f,
+		// if the line begins with a 'v', it is data we can use
+		if(line[0] == 'v')
+		{
+			float a, b, c;
 
+			// if the next char is 'n', we have a Vertex Normal
+			if(line[1] == 'n')
+			{
+				sscanf(line, "vn %f %f %f", &a, &b, &c);
+				normalsVector.push_back(glm::vec3(a, b, c));				
+			}
+			// if the next char is 't', we have a Vertex Texture
+			else if(line[1] == 't')
+			{
 
-		-0.5f, 0.5f, 0.5f,
-		-0.5f, 0.5f,-0.5f,
-		-0.5f,-0.5f, 0.5f,
+			}
+			// else we just have the vertex position
+			else
+			{				
+				sscanf(line, "v %f %f %f", &a, &b, &c);
+				verticesVector.push_back(glm::vec3(a, b, c));
+			}
+		}
+		/*
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+                         "Missing file",
+                         "File is missing. Please reinstall the program.",
+                         NULL);
+		*/
 
-		-0.5f,-0.5f, 0.5f,
-		-0.5f, 0.5f,-0.5f,
-		-0.5f,-0.5f,-0.5f,
+		if(line[0] == 'f')
+		{
+			// face, facenumber, facepart (vertex / texture / normal)
+			int f1a = 1, f1b = 1, f1c = 1, f2a = 1, f2b = 1, f2c = 1, f3a = 1, f3b = 1, f3c = 1, f4a = 1, f4b = 1, f4c = 1;
 
-		 0.5f, 0.5f,-0.5f,
-		 0.5f,-0.5f,-0.5f,
-		-0.5f, 0.5f,-0.5f,
+			std::string lineS = std::string(line);
 
-		-0.5f, 0.5f,-0.5f,
-		 0.5f,-0.5f,-0.5f,
-		-0.5f,-0.5f,-0.5f
+			// OBJ has 3 face definitions; Vertex/Texture/Normal, Vertex//Normal, Vertex, so we need to find which one this file type has
 
-	};
+			// Firstly we check if the face is a Quad or a Tri
+			if(count(lineS.begin(), lineS.end(), ' ') == 4)
+			{
+				// we check the format of the face
+				if(lineS.find("//") != std::string::npos)
+				{
+					sscanf(line, "f %d//%d %d//%d %d//%d %d//%d", &f1a, &f1c, &f2a, &f2c, &f3a, &f3c, &f4a, &f4c);
+				}
+				else if(lineS.find("/") != std::string::npos)
+				{
+					sscanf(line, "f %d/%d/%d %d/%d/%d %d/%d/%d %d/%d/%d", &f1a, &f1b, &f1c, &f2a, &f2b, &f2c, &f3a, &f3b, &f3c, &f4a, &f4b, &f4c);
+				}
+				else
+				{
+					sscanf(line, "f %d %d %d %d", &f1a, &f2a, &f3a, &f4a);
+				}
+
+				faces.push_back(Face(f1a, f1b, f1c, true));
+			faceNum++;
+				faces.push_back(Face(f2a, f2b, f2c, true));
+			faceNum++;
+				faces.push_back(Face(f3a, f3b, f3c, true));
+			faceNum++;
+				faces.push_back(Face(f4a, f4b, f4c, true));
+			}
+			else
+			{
+				// we check the format of the face
+				if(lineS.find("//") != std::string::npos)
+				{
+					sscanf(line, "f %d//%d %d//%d %d//%d", &f1a, &f1c, &f2a, &f2c, &f3a, &f3c);
+				}
+				else if(lineS.find("/") != std::string::npos)
+				{
+					sscanf(line, "f %d/%d/%d %d/%d/%d %d/%d/%d", &f1a, &f1b, &f1c, &f2a, &f2b, &f2c, &f3a, &f3b, &f3c);
+				}
+				else
+				{
+					sscanf(line, "f %d %d %d", &f1a, &f2a, &f3a);
+				}
+
+				faces.push_back(Face(f1a, f1b, f1c, false));
+			faceNum++;
+				faces.push_back(Face(f2a, f2b, f2c, false));
+			faceNum++;
+				faces.push_back(Face(f3a, f3b, f3c, false));
+			}
+
+			faceNum++;
+		}
+	}
+
+	int fSize = faces.size();
+	for(int i = 0; i < fSize;)
+	{		
+		if(faces[i].quad)
+		{				
+			vertices.push_back(verticesVector[faces[i].vertex - 1]);
+			//normals.push_back(normalsVector[faces[i].normal - 1]);
+
+			if(i + 1 < fSize)
+			{
+				vertices.push_back(verticesVector[faces[i + 1].vertex - 1]);
+				//normals.push_back(normalsVector[faces[i + 1].normal - 1]);
+			}
+			if(i + 2 < fSize)
+			{
+				vertices.push_back(verticesVector[faces[i + 2].vertex - 1]);
+				//normals.push_back(normalsVector[faces[i + 2].normal - 1]);
+			}
+			vertices.push_back(verticesVector[faces[i].vertex - 1]);
+			//normals.push_back(normalsVector[faces[i].normal - 1]);
+			if(i + 2 < fSize)
+			{
+				vertices.push_back(verticesVector[faces[i + 2].vertex - 1]);
+				//normals.push_back(normalsVector[faces[i + 2].normal - 1]);
+			}
+			if(i + 3 < fSize)
+			{
+				vertices.push_back(verticesVector[faces[i + 3].vertex - 1]);
+				//normals.push_back(normalsVector[faces[i + 3].normal - 1]);
+			}
+
+			i += 4;
+		}
+		else
+		{			
+
+			vertices.push_back(verticesVector[faces[i].vertex - 1]);
+		//	normals.push_back(normalsVector[faces[i].normal - 1]);
+
+			if(i + 1 < fSize)
+			{
+				vertices.push_back(verticesVector[faces[i + 1].vertex - 1]);
+				//normals.push_back(normalsVector[faces[i + 1].normal - 1]);
+			}
+			if(i + 2 < fSize)
+			{
+				vertices.push_back(verticesVector[faces[i + 2].vertex - 1]);
+				//normals.push_back(normalsVector[faces[i + 2].normal - 1]);
+			}
+
+			i += 3;
+		}
+	}
+
 	// Number of vertices in above data
-	numVertices = 24;
+	numVertices = vertices.size();
+	
+	std::vector<float> vertFloats;
+	std::vector<float> normalFloats;
+
+	for(int i = 0; i < numVertices; i++)
+	{
+		vertFloats.push_back(vertices[i].x);
+		vertFloats.push_back(vertices[i].y);
+		vertFloats.push_back(vertices[i].z);
+
+		normalFloats.push_back(normals[i].x);
+		normalFloats.push_back(normals[i].y);
+		normalFloats.push_back(normals[i].z);
+	}
+
+	float* vertex = vertFloats.data();
+	float* normal = normalFloats.data();
+
+	// END OBJECT LOADER
 
 	// Variable for storing a VBO
 	GLuint positionBuffer = 0;
@@ -81,48 +221,15 @@ void Mesh::InitialiseVAO()
 	// With this buffer active, we can now send our data to OpenGL
 	// We need to tell it how much data to send
 	// We can also tell OpenGL how we intend to use this buffer - here we say GL_STATIC_DRAW because we're only writing it once
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * numVertices * 3, vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * numVertices * 3, vertex, GL_STATIC_DRAW);
 
 	// This tells OpenGL how we link the vertex data to the shader
 	// (We will look at this properly in the lectures)
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0 );
 	glEnableVertexAttribArray(0);
-
+	
 	// Normal data for our incomplete cube
 	// Each entry is the normal for the corresponding vertex in the position data above
-	float normals[] = {
-		 0.0f, 0.0f, 1.0f,
-		 0.0f, 0.0f, 1.0f,
-		 0.0f, 0.0f, 1.0f,
-		 
-		 0.0f, 0.0f, 1.0f,
-		 0.0f, 0.0f, 1.0f,
-		 0.0f, 0.0f, 1.0f,
-
-		 1.0f, 0.0f, 0.0f,
-		 1.0f, 0.0f, 0.0f,
-		 1.0f, 0.0f, 0.0f,
-		 
-		 1.0f, 0.0f, 0.0f,
-		 1.0f, 0.0f, 0.0f,
-		 1.0f, 0.0f, 0.0f,
-		 
-		-1.0f, 0.0f, 0.0f,
-		-1.0f, 0.0f, 0.0f,
-		-1.0f, 0.0f, 0.0f,
-		 
-		-1.0f, 0.0f, 0.0f,
-		-1.0f, 0.0f, 0.0f,
-		-1.0f, 0.0f, 0.0f,
-		
-		 0.0f, 0.0f,-1.0f,
-		 0.0f, 0.0f,-1.0f,
-		 0.0f, 0.0f,-1.0f,
-		 
-		 0.0f, 0.0f,-1.0f,
-		 0.0f, 0.0f,-1.0f,
-		 0.0f, 0.0f,-1.0f
-	};
 
 	// Variable for storing a VBO
 	GLuint normalBuffer = 0;
@@ -133,11 +240,11 @@ void Mesh::InitialiseVAO()
 	// With this buffer active, we can now send our data to OpenGL
 	// We need to tell it how much data to send
 	// We can also tell OpenGL how we intend to use this buffer - here we say GL_STATIC_DRAW because we're only writing it once
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * numVertices * 3, normals, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * numVertices * 3, normal, GL_STATIC_DRAW);
 
 	// This tells OpenGL how we link the vertex data to the shader
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0 );
-	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(1);	
 
 	// Unbind for neatness, it just makes life easier
 	// As a general tip, especially as you're still learning, for each function that needs to do something specific try to return OpenGL in the state you found it in
@@ -148,10 +255,9 @@ void Mesh::InitialiseVAO()
 	glBindVertexArray( 0 );
 
 	// Technically we can do this, because the enabled / disabled state is stored in the VAO
-	//glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(0);
 
 }
-
 /// Update the mesh position and rotation based on an objects pos + rot (passed in)
 void Mesh::Update(glm::vec3 pos, glm::vec3 rot)
 {

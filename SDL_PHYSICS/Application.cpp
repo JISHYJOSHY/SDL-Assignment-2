@@ -77,9 +77,9 @@ void Application::initObjects()
 {
 	input = new SDL_Input();
 	test = new GameObject();
-	test->SetPosition(0,0,0);
+	test->SetPosition(0, 0, -10);
 
-	mesh = new Mesh();
+	mesh = new Mesh("Monkey.obj");
 	test->AttachMesh(*mesh);
 }
 
