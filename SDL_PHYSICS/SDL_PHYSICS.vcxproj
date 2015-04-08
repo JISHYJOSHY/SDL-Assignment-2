@@ -87,6 +87,7 @@
     <ClCompile Include="glew.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="SDL_Input.cpp" />
+    <ClCompile Include="Shader.cpp" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -95,6 +96,7 @@
     <ClInclude Include="glew.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="SDL_Input.h" />
+    <ClInclude Include="Shader.h" />
     <ClInclude Include="wglew.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

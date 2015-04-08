@@ -11,6 +11,7 @@
 #include <glm.hpp>
 #include <SDL.h>
 #include "glew.h"
+#include "Shader.h"
 
 class Mesh
 {
@@ -20,26 +21,16 @@ public:
 
 	/// Loads object model into OpenGL
 	void InitialiseVAO();
-
-	/// Loads shaders for the object into OpenGL
-	void InitialiseShaders();
-
+	
 	void Update(glm::vec3 pos, glm::vec3 rot);
 		
 	/// Draws object using the given camera view and projection matrices
-	void Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix);
-
+	void Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix, Shader *shader);
 
 private:
 
 	/// Vertex Array Object for model in OpenGL
 	GLuint VAO;
-
-	/// Shader program
-	GLuint program;
-
-	/// Uniform locations
-	GLint shaderModelMatLocation, shaderViewMatLocation, shaderProjMatLocation;
 
 	/// Object's model matrix
 	/// This is rebuilt in the update function

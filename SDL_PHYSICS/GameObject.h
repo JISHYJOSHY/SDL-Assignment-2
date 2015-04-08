@@ -39,6 +39,7 @@ protected:
 	glm::vec3 rotation;
 
 	Mesh* mesh;
+	Shader* shader;
 };
 
 #endif

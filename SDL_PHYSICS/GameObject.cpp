@@ -14,6 +14,7 @@
 GameObject::GameObject()
 {
 	mesh = NULL;
+	shader = new Shader();
 }
 
 GameObject::~GameObject()
@@ -40,7 +41,7 @@ void GameObject::Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix)
 {
 	if(mesh != NULL)
 	{
-		mesh->Draw(viewMatrix, projMatrix);
+		mesh->Draw(viewMatrix, projMatrix, shader);
 	}
 }
 
