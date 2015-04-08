@@ -11,27 +11,24 @@
 #include <glm.hpp>
 #include <SDL.h>
 #include "glew.h"
+#include "Mesh.h"
 
 class GameObject
 {
 public:
 	GameObject(void);
 	~GameObject(void);
-
-	/// Loads object model into OpenGL
-	void InitialiseVAO();
-
-	/// Loads shaders for the object into OpenGL
-	void InitialiseShaders();
-
 	/// Currently just updates rotation to make the model rotate
-	void Update( float deltaTs );
+	void Update(float dt);
 
 	/// Draws object using the given camera view and projection matrices
 	void Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix);
-
+	
 	/// For setting the position of the model
 	void SetPosition( float posX, float posY, float posZ ) {position.x = posX; position.y = posY; position.z = posZ;}
+
+	/// For attaching a mesh to the local Mesh pointer
+	void AttachMesh(Mesh &meshObject);
 
 protected:
 
@@ -41,21 +38,7 @@ protected:
 	/// Euler angles for rotation
 	glm::vec3 rotation;
 
-	/// Vertex Array Object for model in OpenGL
-	GLuint VAO;
-
-	/// Shader program
-	GLuint program;
-
-	/// Uniform locations
-	GLint shaderModelMatLocation, shaderViewMatLocation, shaderProjMatLocation;
-
-	/// Object's model matrix
-	/// This is rebuilt in the update function
-	glm::mat4 modelMatrix;
-
-	/// Number of vertices in the model
-	unsigned int numVertices;
+	Mesh* mesh;
 };
 
 #endif

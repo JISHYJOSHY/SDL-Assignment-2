@@ -39,6 +39,7 @@ private:
 	SDL_GLContext glcontext;
 	SDL_Input* input;
 	GameObject* test;
+	Mesh* mesh;
 
 	int winWidth;
 	int winHeight;

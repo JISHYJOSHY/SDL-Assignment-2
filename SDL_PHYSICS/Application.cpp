@@ -78,6 +78,9 @@ void Application::initObjects()
 	input = new SDL_Input();
 	test = new GameObject();
 	test->SetPosition(0,0,0);
+
+	mesh = new Mesh();
+	test->AttachMesh(*mesh);
 }
 
 /// Frame Step of Application.
@@ -106,14 +109,14 @@ void Application::Draw()
 	// Create a viewing matrix for the camera
 	// Don't forget, this is the opposite of where the camera actually is
 	// You can think of this as moving the world away from the camera
-	glm::mat4 View = glm::translate(glm::mat4(1.0f), glm::vec3(0,0,-2.5f) );
+	glm::mat4 View = glm::translate(glm::mat4(1.0f), glm::vec3(0,0,-2.5f));
 
 	// Draw the object using the given view (which contains the camera orientation) and projection (which contains information about the camera 'lense')
-	test->Draw( View, Projection);
+	test->Draw(View, Projection);
 
 	// This tells the renderer to actually show its contents to the screen
 	// We'll get into this sort of thing at a later date - or just look up 'double buffering' if you're impatient :P
-	SDL_GL_SwapWindow( window );
+	SDL_GL_SwapWindow(window);
 }
 
 /// Game Loop.
