@@ -16,6 +16,7 @@ SDL_Input::SDL_Input(void)
 	{
 		keysHeld[i] = false;
 	}
+	mousePress = mouseClick = false;
 }
 
 SDL_Input::~SDL_Input(void)
@@ -31,16 +32,43 @@ void SDL_Input::Update()
 		// update the array of keys
 		if (incomingEvent.type == SDL_KEYDOWN)
 		{
-			keysHeld[incomingEvent.key.keysym.sym] = true;
+			if(incomingEvent.key.keysym.sym < 323)
+				keysHeld[incomingEvent.key.keysym.sym] = true;
 		}
 		if (incomingEvent.type == SDL_KEYUP)
 		{
-			keysHeld[incomingEvent.key.keysym.sym] = false;
+			if(incomingEvent.key.keysym.sym < 323)
+				keysHeld[incomingEvent.key.keysym.sym] = false;
+		}
+
+		if (incomingEvent.type == SDL_MOUSEMOTION)
+		{
+			mousePos.x = incomingEvent.motion.x;
+			mousePos.y = incomingEvent.motion.y;
+		}
+
+		if (incomingEvent.type == SDL_MOUSEBUTTONDOWN)
+		{
+			if(!mousePress)
+			{
+				mousePress = true;
+				mouseClick = true;
+			}
+			else
+			{
+				mouseClick = false;
+			}
+		}
+		
+		if (incomingEvent.type == SDL_MOUSEBUTTONUP)
+		{
+			mousePress = false;
+			mouseClick = false;
 		}
 	}
 }
 
-/// Key Pressed.
+/// Key Down.
 /// returns the value of a passed in index for the keyBuffer array.
 bool SDL_Input::isKeyDown(int key)
 {
@@ -48,6 +76,18 @@ bool SDL_Input::isKeyDown(int key)
 		return false;
 
 	return keysHeld[key];
+}
+/// Key Pressed.
+/// returns the value of a passed in index for the keyBuffer array, and sets it to false as to indicate a press, rather than being held down.
+bool SDL_Input::isKeyPressed(int key)
+{
+	if(key > 322)
+		return false;
+
+	bool ret = keysHeld[key];
+	keysHeld[key] = false;
+
+	return ret;
 }
 
 /// Escape Key.

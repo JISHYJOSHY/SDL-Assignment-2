@@ -83,6 +83,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="glew.cpp" />
     <ClCompile Include="Mesh.cpp" />
@@ -92,6 +93,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="glew.h" />
     <ClInclude Include="Mesh.h" />

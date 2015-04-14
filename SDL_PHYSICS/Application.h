@@ -16,6 +16,7 @@
 
 #include "SDL_Input.h"
 #include "GameObject.h"
+#include "Camera.h"
 
 class Application
 {
@@ -37,8 +38,10 @@ private:
 	SDL_Window* window;
 	SDL_Renderer* renderer;
 	SDL_GLContext glcontext;
+
 	SDL_Input* input;
 	GameObject* test;
+	Camera* camera;
 	Mesh* mesh;
 
 	int winWidth;

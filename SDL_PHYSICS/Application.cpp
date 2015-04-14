@@ -81,6 +81,8 @@ void Application::initObjects()
 
 	mesh = new Mesh("Monkey.obj");
 	test->AttachMesh(*mesh);
+
+	camera = new Camera();
 }
 
 /// Frame Step of Application.
@@ -88,34 +90,24 @@ void Application::initObjects()
 void Application::Update(float dt)
 {
 	input->Update();
+
+	camera->Update(input, dt);
 	
-	test->Update(dt);
+	//test->Update(dt);
 }
 
 /// Draw Step of Application.
 /// Includes the drawing of entities in the application.
 void Application::Draw()
 {	
-	// Draw our world
-
-	// Specify the colour to clear the framebuffer to
+	// reset buffer
 	glClearColor(0.0f,0.0f,0.0f,0.0f);
-	// This writes the above colour to the colour part of the framebuffer
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// Construct a projection matrix for the camera
-	glm::mat4 Projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.0f);
+	// draw objects using cameras perspective
+	test->Draw(camera->getViewMatrix(), camera->getProjectionMatrix());
 
-	// Create a viewing matrix for the camera
-	// Don't forget, this is the opposite of where the camera actually is
-	// You can think of this as moving the world away from the camera
-	glm::mat4 View = glm::translate(glm::mat4(1.0f), glm::vec3(0,0,-2.5f));
-
-	// Draw the object using the given view (which contains the camera orientation) and projection (which contains information about the camera 'lense')
-	test->Draw(View, Projection);
-
-	// This tells the renderer to actually show its contents to the screen
-	// We'll get into this sort of thing at a later date - or just look up 'double buffering' if you're impatient :P
+	// do the render
 	SDL_GL_SwapWindow(window);
 }
 
@@ -137,7 +129,7 @@ void Application::run()
 		if(input->Esc())
 			running = false;
 		
-		if( dt < (1.0f/50.0f) )
+		if( dt < (1.0f/60.0f) )
 		{
 			SDL_Delay((unsigned int) (((1.0f/50.0f) - dt) * 1000.0f));
 		}

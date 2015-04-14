@@ -1,7 +1,7 @@
 #include "Mesh.h"
 
+#include <iostream>
 #include <fstream>
-#include <algorithm>
 
 #include <gtc/type_ptr.hpp>
 #include <gtc/matrix_transform.hpp>
@@ -21,6 +21,7 @@ Mesh::Mesh(std::string filename)
 
 	// Create the model
 	LoadMesh(filename);
+	CreateVAO();
 }
 
 Mesh::~Mesh(void)
@@ -28,24 +29,36 @@ Mesh::~Mesh(void)
 }
 
 void Mesh::LoadMesh(std::string filename)
-{
-		// Creates one VAO
-	glGenVertexArrays( 1, &VAO );
-	// 'Binding' something makes it the current one we are using
-	// This is like activating it, so that subsequent function calls will work on this item
-	glBindVertexArray( VAO );
+{	
+	// START OBJECT LOADER
+	std::cout << "Loading file: '" << filename << "'" << std::endl;
 
-	// OBJECT LOADER
 	std::ifstream file(filename);
-	unsigned int faceNum = 0;
+	
+	// Check if the file is loaded
+	if(file == NULL)
+	{
+		std::cout << "Cannot open file: '" << filename << "'" << std::endl;
+		getchar();
+		return;
+	}
 
+	// vectors to hold the index of the verts, uv and normals
+	std::vector<unsigned int> vertexIndices, uvIndices, normalIndices;
+
+	// some temporary vectors to hold the data before we commit it
+	std::vector<glm::vec3> tempVertices; 
+	std::vector<glm::vec2> tempUVs;
+	std::vector<glm::vec3> tempNormals;
+
+	// while the file is open, loop through the contents
 	while(!file.eof())
 	{
+		// read the file line by line
 		char line[256];
-
 		file.getline(line, 256);
 
-		// if the line begins with a 'v', it is data we can use
+		// if the line begins with a 'v', it is data we can use (vertex, normal or uv)
 		if(line[0] == 'v')
 		{
 			float a, b, c;
@@ -54,233 +67,161 @@ void Mesh::LoadMesh(std::string filename)
 			if(line[1] == 'n')
 			{
 				sscanf(line, "vn %f %f %f", &a, &b, &c);
-				normalsVector.push_back(glm::vec3(a, b, c));				
+				tempNormals.push_back(glm::vec3(a, b, c));	
 			}
 			// if the next char is 't', we have a Vertex Texture
 			else if(line[1] == 't')
 			{
-
+				sscanf(line, "vt %f %f", &a, &b);
+				tempUVs.push_back(glm::vec2(a, b));
 			}
 			// else we just have the vertex position
 			else
 			{				
 				sscanf(line, "v %f %f %f", &a, &b, &c);
-				verticesVector.push_back(glm::vec3(a, b, c));
+				tempVertices.push_back(glm::vec3(a, b, c));
 			}
 		}
-		/*
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-                         "Missing file",
-                         "File is missing. Please reinstall the program.",
-                         NULL);
-		*/
-
-		if(line[0] == 'f')
+		// else if the line begins with 'f', it is a face
+		else if(line[0] == 'f')
 		{
-			// face, facenumber, facepart (vertex / texture / normal)
-			int f1a = 1, f1b = 1, f1c = 1, f2a = 1, f2b = 1, f2c = 1, f3a = 1, f3b = 1, f3c = 1, f4a = 1, f4b = 1, f4c = 1;
+			unsigned int vertexIndex[3], uvIndex[3], normalIndex[3];
+			
+			// obj have 3 ways to define a face: Vertex/UV/Normal, Vertex//Normal, and Vertex
+			// we need to test for each one
 
-			std::string lineS = std::string(line);
+			// first we test Vertex/UV/Normal
+			int input = sscanf(line, "f %d/%d/%d %d/%d/%d %d/%d/%d", &vertexIndex[0], &uvIndex[0], &normalIndex[0], &vertexIndex[1], &uvIndex[1], &normalIndex[1], &vertexIndex[2], &uvIndex[2], &normalIndex[2]);
 
-			// OBJ has 3 face definitions; Vertex/Texture/Normal, Vertex//Normal, Vertex, so we need to find which one this file type has
+			// if the scan failed (because of unexpected character
+			if (input < 9)
+			{				
+				// we try the next format: Vertex//Normal
+				input = sscanf(line, "f %d//%d %d//%d %d//%d", &vertexIndex[0], &normalIndex[0], &vertexIndex[1], &normalIndex[1], &vertexIndex[2], &normalIndex[2]);
 
-			// Firstly we check if the face is a Quad or a Tri
-			if(count(lineS.begin(), lineS.end(), ' ') == 4)
-			{
-				// we check the format of the face
-				if(lineS.find("//") != std::string::npos)
+				// in this case there are no UV coords, so we set them to 0
+				uvIndex[0] = 0;
+				uvIndex[1] = 0;
+				uvIndex[2] = 0;
+				
+				// if the scan failed (because of unexpected character
+				if (input < 6)
 				{
-					sscanf(line, "f %d//%d %d//%d %d//%d %d//%d", &f1a, &f1c, &f2a, &f2c, &f3a, &f3c, &f4a, &f4c);
-				}
-				else if(lineS.find("/") != std::string::npos)
-				{
-					sscanf(line, "f %d/%d/%d %d/%d/%d %d/%d/%d %d/%d/%d", &f1a, &f1b, &f1c, &f2a, &f2b, &f2c, &f3a, &f3b, &f3c, &f4a, &f4b, &f4c);
-				}
-				else
-				{
-					sscanf(line, "f %d %d %d %d", &f1a, &f2a, &f3a, &f4a);
-				}
+					// in this case, there are no normals present, so we refuse to load the mesh
 
-				faces.push_back(Face(f1a, f1b, f1c, true));
-			faceNum++;
-				faces.push_back(Face(f2a, f2b, f2c, true));
-			faceNum++;
-				faces.push_back(Face(f3a, f3b, f3c, true));
-			faceNum++;
-				faces.push_back(Face(f4a, f4b, f4c, true));
-			}
-			else
-			{
-				// we check the format of the face
-				if(lineS.find("//") != std::string::npos)
-				{
-					sscanf(line, "f %d//%d %d//%d %d//%d", &f1a, &f1c, &f2a, &f2c, &f3a, &f3c);
+					std::cout << "Face cannot be read because there are no normals specified, cancelled loading" << std::endl;
+					return;
 				}
-				else if(lineS.find("/") != std::string::npos)
-				{
-					sscanf(line, "f %d/%d/%d %d/%d/%d %d/%d/%d", &f1a, &f1b, &f1c, &f2a, &f2b, &f2c, &f3a, &f3b, &f3c);
-				}
-				else
-				{
-					sscanf(line, "f %d %d %d", &f1a, &f2a, &f3a);
-				}
-
-				faces.push_back(Face(f1a, f1b, f1c, false));
-			faceNum++;
-				faces.push_back(Face(f2a, f2b, f2c, false));
-			faceNum++;
-				faces.push_back(Face(f3a, f3b, f3c, false));
 			}
 
-			faceNum++;
+			// add the current vertex index to the vector
+			vertexIndices.push_back(vertexIndex[0]);
+			vertexIndices.push_back(vertexIndex[1]);
+			vertexIndices.push_back(vertexIndex[2]);
+			
+			// add the current yv index to the vector
+			uvIndices.push_back(uvIndex[0]);
+			uvIndices.push_back(uvIndex[1]);
+			uvIndices.push_back(uvIndex[2]);
+			
+			// add the current normal index to the vector
+			normalIndices.push_back(normalIndex[0]);
+			normalIndices.push_back(normalIndex[1]);
+			normalIndices.push_back(normalIndex[2]);
 		}
 	}
-
-	int fSize = faces.size();
-	for(int i = 0; i < fSize;)
-	{		
-		if(faces[i].quad)
-		{				
-			vertices.push_back(verticesVector[faces[i].vertex - 1]);
-			//normals.push_back(normalsVector[faces[i].normal - 1]);
-
-			if(i + 1 < fSize)
-			{
-				vertices.push_back(verticesVector[faces[i + 1].vertex - 1]);
-				//normals.push_back(normalsVector[faces[i + 1].normal - 1]);
-			}
-			if(i + 2 < fSize)
-			{
-				vertices.push_back(verticesVector[faces[i + 2].vertex - 1]);
-				//normals.push_back(normalsVector[faces[i + 2].normal - 1]);
-			}
-			vertices.push_back(verticesVector[faces[i].vertex - 1]);
-			//normals.push_back(normalsVector[faces[i].normal - 1]);
-			if(i + 2 < fSize)
-			{
-				vertices.push_back(verticesVector[faces[i + 2].vertex - 1]);
-				//normals.push_back(normalsVector[faces[i + 2].normal - 1]);
-			}
-			if(i + 3 < fSize)
-			{
-				vertices.push_back(verticesVector[faces[i + 3].vertex - 1]);
-				//normals.push_back(normalsVector[faces[i + 3].normal - 1]);
-			}
-
-			i += 4;
-		}
-		else
-		{			
-
-			vertices.push_back(verticesVector[faces[i].vertex - 1]);
-		//	normals.push_back(normalsVector[faces[i].normal - 1]);
-
-			if(i + 1 < fSize)
-			{
-				vertices.push_back(verticesVector[faces[i + 1].vertex - 1]);
-				//normals.push_back(normalsVector[faces[i + 1].normal - 1]);
-			}
-			if(i + 2 < fSize)
-			{
-				vertices.push_back(verticesVector[faces[i + 2].vertex - 1]);
-				//normals.push_back(normalsVector[faces[i + 2].normal - 1]);
-			}
-
-			i += 3;
-		}
-	}
-
-	// Number of vertices in above data
-	numVertices = vertices.size();
-	
-	std::vector<float> vertFloats;
-	std::vector<float> normalFloats;
-
-	for(int i = 0; i < numVertices; i++)
+		
+	// allocate a piece of memory before for loop to stop multiple calls of the .size() function
+	unsigned int arraySize = vertexIndices.size();
+	for(unsigned int i = 0; i < arraySize; i++)
 	{
-		vertFloats.push_back(vertices[i].x);
-		vertFloats.push_back(vertices[i].y);
-		vertFloats.push_back(vertices[i].z);
+		// Now we assign the verts to the actual vector in the order in which the faces tell us
+		unsigned int vertexIndex = vertexIndices[i];
+		unsigned int uvIndex = uvIndices[i];
+		unsigned int normalIndex = normalIndices[i];
+		
+		// Get the attributes thanks to the index
 
-		normalFloats.push_back(normals[i].x);
-		normalFloats.push_back(normals[i].y);
-		normalFloats.push_back(normals[i].z);
+		// firstly, make sure we aren't missing the vector
+		if(vertexIndex > 0)
+		{
+			// if the index is greater than 0, because OBJ starts at 1 (c++ starts at 0), we can safely remove 1 to translate the index
+			glm::vec3 vertex = tempVertices[vertexIndex - 1];
+
+			// and then add the vertex to the vector
+			vertices.push_back(vertex);
+		}
+
+		// and do the same for the uvs and normals
+
+		if(uvIndex > 0)
+		{
+			glm::vec2 uv = tempUVs[uvIndex - 1];
+			uvs.push_back(uv);
+		}
+
+		if(normalIndex > 0)
+		{
+			glm::vec3 normal = tempNormals[normalIndex - 1];
+			normals.push_back(normal);	
+		}
 	}
 
-	float* vertex = vertFloats.data();
-	float* normal = normalFloats.data();
+	// variable to tell OpenGL how many vertices to draw
+	numVertices = vertices.size();
 
 	// END OBJECT LOADER
+}
+
+/// Create the VAO after we have loaded the mesh
+void Mesh::CreateVAO()
+{	
+	// Create VAO and start binding process
+	glGenVertexArrays( 1, &VAO );
+	glBindVertexArray( VAO );
 
 	// Variable for storing a VBO
 	GLuint positionBuffer = 0;
-	// Create a generic 'buffer'
-	glGenBuffers(1, &positionBuffer);
-	// Tell OpenGL that we want to activate the buffer and that it's a VBO
-	glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
-	// With this buffer active, we can now send our data to OpenGL
-	// We need to tell it how much data to send
-	// We can also tell OpenGL how we intend to use this buffer - here we say GL_STATIC_DRAW because we're only writing it once
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * numVertices * 3, vertex, GL_STATIC_DRAW);
 
-	// This tells OpenGL how we link the vertex data to the shader
-	// (We will look at this properly in the lectures)
+	// Create a buffer and send the vertex information to it
+	glGenBuffers(1, &positionBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0 );
 	glEnableVertexAttribArray(0);
 	
-	// Normal data for our incomplete cube
-	// Each entry is the normal for the corresponding vertex in the position data above
-
 	// Variable for storing a VBO
 	GLuint normalBuffer = 0;
-	// Create a generic 'buffer'
-	glGenBuffers(1, &normalBuffer);
-	// Tell OpenGL that we want to activate the buffer and that it's a VBO
-	glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
-	// With this buffer active, we can now send our data to OpenGL
-	// We need to tell it how much data to send
-	// We can also tell OpenGL how we intend to use this buffer - here we say GL_STATIC_DRAW because we're only writing it once
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * numVertices * 3, normal, GL_STATIC_DRAW);
 
-	// This tells OpenGL how we link the vertex data to the shader
+	// Create a buffer and send the normal information to it
+	glGenBuffers(1, &normalBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+	glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0 );
 	glEnableVertexAttribArray(1);	
 
-	// Unbind for neatness, it just makes life easier
-	// As a general tip, especially as you're still learning, for each function that needs to do something specific try to return OpenGL in the state you found it in
-	// This means you will need to set the states at the beginning of your function and set them back at the end
-	// If you don't do this, your function could rely on states being set elsewhere and it's easy to lose track of this as your project grows
-	// If you then change the code from elsewhere, your current code could mysteriously stop working properly!
+	// Reset OpenGL
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray( 0 );
 
-	// Technically we can do this, because the enabled / disabled state is stored in the VAO
 	glDisableVertexAttribArray(0);
-
 }
+
 /// Update the mesh position and rotation based on an objects pos + rot (passed in)
 void Mesh::Update(glm::vec3 pos, glm::vec3 rot)
 {
-	// Build the model matrix!
-	// First we start with an identity matrix
-	// This is created with the command: glm::mat4(1.0f)
-	// Next, we translate this matrix according to the object's _position vector:
 	modelMatrix = glm::translate(glm::mat4(1.0f), pos );
-	// Next, we rotate this matrix in the y-axis by the object's y-rotation:
-	modelMatrix = glm::rotate(modelMatrix, rot.y, glm::vec3(0,1,0) );
-	// And there we go, model matrix is ready!
+	modelMatrix = glm::rotate(modelMatrix, rot.y, glm::vec3(0,1,1));
 }
 
 /// Draw the object with a specified view + projection matrix, as well as a shader
 void Mesh::Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix, Shader *shader)
 {
-	// Ok, here I like to indent drawing calls - it's just a personal style, you may not like it and that's fine ;)
-	// Generally you will need to be activating and deactivating OpenGL states
-	// I just find it visually easier if the activations / deactivations happen at different tab depths
-	// This can help when things get more complex
-
 	// Activate the shader program
 	glUseProgram( shader->Program() );
+
 
 		// Activate the VAO
 		glBindVertexArray( VAO );
@@ -289,15 +230,13 @@ void Mesh::Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix, Shader *shader)
 			glUniformMatrix4fv(shader->ModelMat(), 1, GL_FALSE, glm::value_ptr(modelMatrix) );
 			glUniformMatrix4fv(shader->ViewMat(), 1, GL_FALSE, glm::value_ptr(viewMatrix) );
 			glUniformMatrix4fv(shader->ProjMat(), 1, GL_FALSE, glm::value_ptr(projMatrix) );
-
-
+			
 			// Tell OpenGL to draw it
-			// Must specify the type of geometry to draw and the number of vertices
 			glDrawArrays(GL_TRIANGLES, 0, numVertices);
 			
 		// Unbind VAO
 		glBindVertexArray( 0 );
 	
-	// Technically we can do this, but it makes no real sense because we must always have a valid shader program to draw geometry
+	// Reset program
 	glUseProgram( 0 );
 }
