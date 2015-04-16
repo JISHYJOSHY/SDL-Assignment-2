@@ -31,14 +31,14 @@ Mesh::~Mesh(void)
 void Mesh::LoadMesh(std::string filename)
 {	
 	// START OBJECT LOADER
-	std::cout << "Loading file: '" << filename << "'" << std::endl;
+	std::cout << "Loading file: '" << filename << "'. ";
 
 	std::ifstream file(filename);
 	
 	// Check if the file is loaded
 	if(file == NULL)
 	{
-		std::cout << "Cannot open file: '" << filename << "'" << std::endl;
+		std::cout << "FAILED : Cannot open file: '" << filename << "'" << std::endl;
 		getchar();
 		return;
 	}
@@ -109,7 +109,7 @@ void Mesh::LoadMesh(std::string filename)
 				{
 					// in this case, there are no normals present, so we refuse to load the mesh
 
-					std::cout << "Face cannot be read because there are no normals specified, cancelled loading" << std::endl;
+					std::cout << "FAILED : Face cannot be read because there are no normals specified" << std::endl;
 					return;
 				}
 			}
@@ -167,6 +167,8 @@ void Mesh::LoadMesh(std::string filename)
 		}
 	}
 
+	std::cout << "SUCCESS : Model Loaded" << std::endl;
+
 	// variable to tell OpenGL how many vertices to draw
 	numVertices = vertices.size();
 
@@ -178,33 +180,42 @@ void Mesh::CreateVAO()
 {	
 	// Create VAO and start binding process
 	glGenVertexArrays( 1, &VAO );
-	glBindVertexArray( VAO );
+		glBindVertexArray( VAO );
 
-	// Variable for storing a VBO
-	GLuint positionBuffer = 0;
+			// Variable for storing a VBO
+			GLuint positionBuffer = 0;
 
-	// Create a buffer and send the vertex information to it
-	glGenBuffers(1, &positionBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
-	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+			// Create a buffer and send the vertex information to it
+			glGenBuffers(1, &positionBuffer);
+				glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
+				glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0 );
-	glEnableVertexAttribArray(0);
-	
-	// Variable for storing a VBO
-	GLuint normalBuffer = 0;
+				glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0 );
+			glEnableVertexAttribArray(0);
+			
+			GLuint normalBuffer = 0;
+			
+			// Create a buffer and send the normal information to it
+			glGenBuffers(1, &normalBuffer);
+				glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+				glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
 
-	// Create a buffer and send the normal information to it
-	glGenBuffers(1, &normalBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
-	glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+				glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0 );
+			glEnableVertexAttribArray(1);	
+			
+			GLuint uvBuffer = 0;
+			
+			// Create a buffer and send the uv information to it
+			glGenBuffers(1, &uvBuffer);
+				glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
+				glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
 
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0 );
-	glEnableVertexAttribArray(1);	
+				glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0 );
+			glEnableVertexAttribArray(1);	
 
-	// Reset OpenGL
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray( 0 );
+			// Reset OpenGL
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray( 0 );
 
 	glDisableVertexAttribArray(0);
 }
@@ -231,6 +242,35 @@ void Mesh::Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix, Shader *shader)
 			glUniformMatrix4fv(shader->ViewMat(), 1, GL_FALSE, glm::value_ptr(viewMatrix) );
 			glUniformMatrix4fv(shader->ProjMat(), 1, GL_FALSE, glm::value_ptr(projMatrix) );
 			
+			// Tell OpenGL to draw it
+			glDrawArrays(GL_TRIANGLES, 0, numVertices);
+			
+		// Unbind VAO
+		glBindVertexArray( 0 );
+	
+	// Reset program
+	glUseProgram( 0 );
+}
+
+/// Draw the object with a specified view + projection matrix, as well as a shader and texture
+void Mesh::Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix, Shader *shader, Texture* texture)
+{
+	// Activate the shader program
+	glUseProgram( shader->Program() );
+
+
+		// Activate the VAO
+		glBindVertexArray( VAO );
+
+			// Send matrices to the shader as uniforms like this:
+			glUniformMatrix4fv(shader->ModelMat(), 1, GL_FALSE, glm::value_ptr(modelMatrix) );
+			glUniformMatrix4fv(shader->ViewMat(), 1, GL_FALSE, glm::value_ptr(viewMatrix) );
+			glUniformMatrix4fv(shader->ProjMat(), 1, GL_FALSE, glm::value_ptr(projMatrix) );
+			
+			// use the texture
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, texture->Get());
+
 			// Tell OpenGL to draw it
 			glDrawArrays(GL_TRIANGLES, 0, numVertices);
 			

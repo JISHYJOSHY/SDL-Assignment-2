@@ -8,9 +8,8 @@
 /// Created by Joshua Cook -- 2015
 /// 
 
-#include <glm.hpp>
-#include <SDL.h>
 #include "glew.h"
+#include <string>
 
 class Shader
 {
@@ -23,17 +22,18 @@ public:
 	
 	/// Functions to get the GLint information outside of the class
 	inline GLuint Program() { return program; };
-	inline GLint ModelMat() { return shaderModelMatLocation; };
-	inline GLint ViewMat() { return shaderViewMatLocation; };
-	inline GLint ProjMat() { return shaderProjMatLocation; };
+	inline GLint ModelMat() { return modelMatLocation; };
+	inline GLint ViewMat() { return viewMatLocation; };
+	inline GLint ProjMat() { return projMatLocation; };
 
 private:	
-
 	/// Shader program
 	GLuint program;
 
 	/// Uniform locations
-	GLint shaderModelMatLocation, shaderViewMatLocation, shaderProjMatLocation;
+	GLint modelMatLocation, viewMatLocation, projMatLocation;
+
+	std::string ReadFile(std::string filename);
 
 };
 

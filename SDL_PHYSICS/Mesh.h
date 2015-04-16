@@ -13,7 +13,10 @@
 #include <string>
 #include <vector>
 #include "glew.h"
+
+// the model needs shaders and textures to draw, so we include them
 #include "Shader.h"
+#include "Texture.h"
 
 class Mesh
 {
@@ -26,9 +29,11 @@ public:
 		
 	/// Draws object using the given camera view and projection matrices
 	void Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix, Shader *shader);
-
-private:
 	
+	/// An alternatice draw to draw the object with a texture
+	void Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix, Shader *shader, Texture* texture);
+
+private:	
 	/// Loads object model into OpenGL
 	void LoadMesh(std::string filename);
 
@@ -48,8 +53,6 @@ private:
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::vec3> normals;
 	std::vector<glm::vec2> uvs;
-
-
 };
 
 #endif
