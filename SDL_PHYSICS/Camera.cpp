@@ -14,33 +14,78 @@ Camera::Camera(void)
 
 	pitch = 0;
 	yaw = 0;
-	
-	fov = 70;
+
+	fov = 45;
 	position = glm::vec3(0, 0, 3);
+	viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0,0,-2.5f));
+	projectionMatrix = glm::perspective(70.0f, 16.0f / 9.0f, 0.1f, 100.0f);
 }
 
 Camera::~Camera(void)
 {
 }
 
-void Camera::Update(SDL_Input* input, float dt)
+void Camera::Update(SDL_Input* input, SDL_Window* window, float dt)
 {	
-	unsigned int x = input->mousePosition().x;
-	unsigned int y = input->mousePosition().y;
-	// Compute orientinput->mousePosition().y;ation
-	pitch += mouseSpeed * input->mousePosition().x;
-	yaw += mouseSpeed * input->mousePosition().y;
+	//Restrain();
+	// store the window size for later
+	int width, height;
+	SDL_GetWindowSize(window, &width, &height);
 	
-	// Direction
-	glm::vec3 direction(cos(yaw) * sin(pitch), sin(yaw), cos(yaw) * cos(pitch));
+	// return the mouse to the center of the window
+	//SDL_WarpMouseInWindow(window, width / 2, height / 2);
+
+	yaw += mouseSpeed * (input->mousePosition().x - input->oldMousePosition().x);
+	pitch += mouseSpeed * (input->mousePosition().y - input->oldMousePosition().y);
+
+	// Direction vector
+	glm::vec3 direction( cos(pitch) * sin(yaw), sin(pitch), cos(pitch) * cos(yaw));
 	
 	// Right vector
-	glm::vec3 right = glm::vec3(sin(pitch - 3.14f/2.0f), 0, cos(pitch - 3.14f/2.0f));
-	
+	glm::vec3 right = glm::vec3(sin(yaw - 3.14f/2.0f), 0, cos(yaw - 3.14f/2.0f));	
+
 	// Up vector
-	glm::vec3 up = glm::cross( right, direction );
+	glm::vec3 up = glm::cross(right, direction);
+
+	// now we have the direction vectors, we can calulate movement
+	// Move forward
+	if (input->isKeyDown(SDLK_w))
+	{
+		position += direction * dt * speed;
+	}
+	// Move backward
+	if (input->isKeyDown(SDLK_s))
+	{
+		position -= direction * dt * speed;
+	}
+	// Strafe right
+	if (input->isKeyDown(SDLK_d))
+	{
+		position += right * dt * speed;
+	}
+	// Strafe left
+	if (input->isKeyDown(SDLK_a))
+	{
+		position -= right * dt * speed;
+	}
 
 	projectionMatrix = glm::perspective(fov, 16.0f / 9.0f, 0.1f, 100.0f);
 
-	viewMatrix  = glm::lookAt(position,	position+direction,	up);
+	viewMatrix  = glm::lookAt(position,	position + direction, up);
+}
+
+void Camera::Restrain()
+{   
+	// keep the camera values within sensible numbers
+	if(pitch > 90)
+		pitch = 90;
+
+	if(pitch < -90)
+		pitch = -90;
+
+	if(yaw < 0.0)
+		yaw += 360.0;
+
+	if(yaw > 360.0)
+		yaw -= 360;
 }
