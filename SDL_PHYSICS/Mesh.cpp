@@ -17,11 +17,16 @@ Mesh::Mesh(std::string filename)
 {
 	// Initialise variables
 	VAO = 0;
+	textureID = 0;
 	numVertices = 0;
 
 	// Create the model
 	LoadMesh(filename);
 	CreateVAO();
+
+	positionBuffer = 0;
+	normalBuffer = 0;
+	uvBuffer = 0;
 }
 
 Mesh::~Mesh(void)
@@ -129,7 +134,54 @@ void Mesh::LoadMesh(std::string filename)
 			normalIndices.push_back(normalIndex[1]);
 			normalIndices.push_back(normalIndex[2]);
 		}
+		// if the file picks up a material
+		else if(line[0] == 'm' && line[1] == 't')
+		{
+			std::string matLocation = line;
+
+			// we know the line starts with "mtllib ", so we can remove that from the line
+			matLocation.erase(0, 7);
+
+			// we load in the material location
+			std::ifstream matFile("Materials/" + matLocation);
+
+			// check to see if it exists
+			if(matFile != NULL)
+			{
+                float amb[3], dif[3], spec[3], alpha, ns, ni; // mat information (colour, alpha etc.)
+                int illum; // this value is not implemented yet
+
+				// if it does, we open it
+				while(!matFile.eof())
+				{
+					// we load in the mat file
+					matFile.getline(line, 256);
+
+					// which will be map_Kd filename
+					if(line[0] == 'm' && line[1] == 'a')
+					{
+						// so we read the line
+						std::string textureLocation = line;
+						textureLocation.erase(0, 7);
+						std::cout << textureLocation << std::endl;
+
+						// and load the texture
+						LoadImage("Textures/" + textureLocation);
+
+						break;
+					}
+				}
+			}
+			else
+			{
+				std::cout << "Could not find material : " << matLocation << std::endl;
+			}
+
+			matFile.close();
+		}
 	}
+
+	file.close();
 		
 	// allocate a piece of memory before for loop to stop multiple calls of the .size() function
 	unsigned int arraySize = vertexIndices.size();
@@ -182,9 +234,6 @@ void Mesh::CreateVAO()
 	glGenVertexArrays( 1, &VAO );
 		glBindVertexArray( VAO );
 
-			// Variable for storing a VBO
-			GLuint positionBuffer = 0;
-
 			// Create a buffer and send the vertex information to it
 			glGenBuffers(1, &positionBuffer);
 				glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
@@ -193,8 +242,6 @@ void Mesh::CreateVAO()
 				glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0 );
 			glEnableVertexAttribArray(0);
 			
-			GLuint normalBuffer = 0;
-			
 			// Create a buffer and send the normal information to it
 			glGenBuffers(1, &normalBuffer);
 				glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
@@ -202,9 +249,7 @@ void Mesh::CreateVAO()
 
 				glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0 );
 			glEnableVertexAttribArray(1);	
-			
-			GLuint uvBuffer = 0;
-			
+						
 			// Create a buffer and send the uv information to it
 			glGenBuffers(1, &uvBuffer);
 				glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
@@ -230,6 +275,8 @@ void Mesh::Update(glm::vec3 pos, glm::vec3 rot)
 /// Draw the object with a specified view + projection matrix, as well as a shader
 void Mesh::Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix, Shader *shader)
 {
+	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_DEPTH_TEST);
 	// Activate the shader program
 	glUseProgram( shader->Program() );
 
@@ -242,9 +289,33 @@ void Mesh::Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix, Shader *shader)
 			glUniformMatrix4fv(shader->ViewMat(), 1, GL_FALSE, glm::value_ptr(viewMatrix) );
 			glUniformMatrix4fv(shader->ProjMat(), 1, GL_FALSE, glm::value_ptr(projMatrix) );
 			
+			//send the diffuse texture to the shader
+			int diffuseSampler = glGetUniformLocation(shader->Program(), "texSampler");
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, textureID);
+			glUniform1i(diffuseSampler, 0);
+			
+			//vertex position data read in from obj file
+			glEnableVertexAttribArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+			//vertex normal data read in from obj file
+			glEnableVertexAttribArray(1);
+			glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+			//vertex texture coordinate data read in from obj file
+			glEnableVertexAttribArray(2);
+			glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
+			glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
 			// Tell OpenGL to draw it
 			glDrawArrays(GL_TRIANGLES, 0, numVertices);
 			
+			glDisableVertexAttribArray(0);
+			glDisableVertexAttribArray(1);
+			glDisableVertexAttribArray(2);
 		// Unbind VAO
 		glBindVertexArray( 0 );
 	
@@ -252,31 +323,35 @@ void Mesh::Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix, Shader *shader)
 	glUseProgram( 0 );
 }
 
-/// Draw the object with a specified view + projection matrix, as well as a shader and texture
-void Mesh::Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix, Shader *shader, Texture* texture)
+unsigned int Mesh::LoadImage(std::string filename)
 {
-	// Activate the shader program
-	glUseProgram( shader->Program() );
+	// START TEXTURE LOADER
+	std::cout << "Loading file: '" << filename << "'. ";
 
-
-		// Activate the VAO
-		glBindVertexArray( VAO );
-
-			// Send matrices to the shader as uniforms like this:
-			glUniformMatrix4fv(shader->ModelMat(), 1, GL_FALSE, glm::value_ptr(modelMatrix) );
-			glUniformMatrix4fv(shader->ViewMat(), 1, GL_FALSE, glm::value_ptr(viewMatrix) );
-			glUniformMatrix4fv(shader->ProjMat(), 1, GL_FALSE, glm::value_ptr(projMatrix) );
-			
-			// use the texture
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, texture->Get());
-
-			// Tell OpenGL to draw it
-			glDrawArrays(GL_TRIANGLES, 0, numVertices);
-			
-		// Unbind VAO
-		glBindVertexArray( 0 );
+	// load bmp through SDL
+	SDL_Surface* image = SDL_LoadBMP(filename.c_str());
 	
-	// Reset program
-	glUseProgram( 0 );
+	// check if it has loaded
+	if (!image)
+	{
+		std::cout << "FAILED : Cannot open file: '" << filename << "'" << std::endl;
+		return;
+	}
+
+	std::cout << "SUCCESS : Texture loaded" << std::endl;
+	
+	unsigned int textureID;
+	// use the SDL imported data to generate a texture through glew
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image->w, image->h, 0, GL_RGB, GL_UNSIGNED_BYTE, image->pixels);
+
+	// OpenGL now has our image data, so we can free the loaded image
+	SDL_FreeSurface(image);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
+
+	return textureID;
 }

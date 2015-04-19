@@ -21,7 +21,7 @@ public:
 	inline glm::vec3 getPosition() { return position; };
 	inline glm::mat4 getViewMatrix() { return viewMatrix; };
 	inline glm::mat4 getProjectionMatrix() { return projectionMatrix; };
-	void Update(SDL_Input* input, float dt);
+	void Update(SDL_Input* input, SDL_Window* window, float dt);
 
 	inline void setFOV(int i) { fov = i; };
 	inline void setPosition(glm::vec3 pos) { position = pos; };
@@ -32,12 +32,16 @@ private:
 	glm::mat4 viewMatrix;
 	glm::mat4 projectionMatrix;
 	
+	glm::vec2 mousePosOld;
+	
 	float speed;
 	float mouseSpeed;
 
 	float pitch, yaw;
 
 	float fov;
+
+	void Restrain();
 };
 
 #endif

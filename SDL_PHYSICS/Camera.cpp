@@ -27,7 +27,7 @@ Camera::~Camera(void)
 
 void Camera::Update(SDL_Input* input, SDL_Window* window, float dt)
 {	
-	//Restrain();
+	Restrain();
 	// store the window size for later
 	int width, height;
 	SDL_GetWindowSize(window, &width, &height);
@@ -35,7 +35,7 @@ void Camera::Update(SDL_Input* input, SDL_Window* window, float dt)
 	// return the mouse to the center of the window
 	//SDL_WarpMouseInWindow(window, width / 2, height / 2);
 
-	yaw += mouseSpeed * (input->mousePosition().x - input->oldMousePosition().x);
+	yaw -= mouseSpeed * (input->mousePosition().x - input->oldMousePosition().x);
 	pitch += mouseSpeed * (input->mousePosition().y - input->oldMousePosition().y);
 
 	// Direction vector
@@ -68,7 +68,16 @@ void Camera::Update(SDL_Input* input, SDL_Window* window, float dt)
 	{
 		position -= right * dt * speed;
 	}
-
+	// Move up
+	if(input->isKeyDown(SDLK_SPACE))
+	{
+		position += up * dt * speed;
+	}
+	// Move down
+	if(input->isKeyDown(SDLK_z))
+	{
+		position -= up * dt * speed;
+	}
 	projectionMatrix = glm::perspective(fov, 16.0f / 9.0f, 0.1f, 100.0f);
 
 	viewMatrix  = glm::lookAt(position,	position + direction, up);
@@ -77,11 +86,11 @@ void Camera::Update(SDL_Input* input, SDL_Window* window, float dt)
 void Camera::Restrain()
 {   
 	// keep the camera values within sensible numbers
-	if(pitch > 90)
-		pitch = 90;
+	if(pitch > 30)
+		pitch = 30;
 
-	if(pitch < -90)
-		pitch = -90;
+	if(pitch < -30)
+		pitch = -30;
 
 	if(yaw < 0.0)
 		yaw += 360.0;

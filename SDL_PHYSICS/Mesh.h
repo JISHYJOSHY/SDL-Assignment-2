@@ -14,9 +14,8 @@
 #include <vector>
 #include "glew.h"
 
-// the model needs shaders and textures to draw, so we include them
 #include "Shader.h"
-#include "Texture.h"
+#include "Material.h"
 
 class Mesh
 {
@@ -29,19 +28,32 @@ public:
 		
 	/// Draws object using the given camera view and projection matrices
 	void Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix, Shader *shader);
-	
-	/// An alternatice draw to draw the object with a texture
-	void Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix, Shader *shader, Texture* texture);
 
 private:	
 	/// Loads object model into OpenGL
 	void LoadMesh(std::string filename);
+	/// Loads a texture into a GLuint
+	unsigned int LoadImage(std::string filename);
 
 	/// Create VAO
 	void CreateVAO();
 
 	/// Vertex Array Object for model in OpenGL
 	GLuint VAO;
+
+	/// GLuint for texture data
+	std::vector<unsigned int> textures;
+
+	/// Materials
+	std::vector<Material> materials;
+
+	/// Don't Know
+	bool mat, tex, norm;
+
+	/// Buffers	
+	GLuint positionBuffer;
+	GLuint normalBuffer;
+	GLuint uvBuffer;
 
 	/// Object's model matrix
 	/// This is rebuilt in the update function
