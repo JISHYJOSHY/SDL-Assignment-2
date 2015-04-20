@@ -19,6 +19,7 @@ Camera::Camera(void)
 	position = glm::vec3(0, 0, 3);
 	viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0,0,-2.5f));
 	projectionMatrix = glm::perspective(70.0f, 16.0f / 9.0f, 0.1f, 100.0f);
+
 }
 
 Camera::~Camera(void)
@@ -31,12 +32,14 @@ void Camera::Update(SDL_Input* input, SDL_Window* window, float dt)
 	// store the window size for later
 	int width, height;
 	SDL_GetWindowSize(window, &width, &height);
+	width /= 2;
+	height /= 2;
 	
 	// return the mouse to the center of the window
-	//SDL_WarpMouseInWindow(window, width / 2, height / 2);
+	yaw += mouseSpeed * (width - input->mousePosition().x);
+	pitch += mouseSpeed * (height - input->mousePosition().y);
 
-	yaw -= mouseSpeed * (input->mousePosition().x - input->oldMousePosition().x);
-	pitch += mouseSpeed * (input->mousePosition().y - input->oldMousePosition().y);
+    SDL_WarpMouseInWindow(window, width, height);       //move back the cursor to the center of the screen
 
 	// Direction vector
 	glm::vec3 direction( cos(pitch) * sin(yaw), sin(pitch), cos(pitch) * cos(yaw));
