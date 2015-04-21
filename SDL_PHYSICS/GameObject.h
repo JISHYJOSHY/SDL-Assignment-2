@@ -25,21 +25,22 @@ public:
 	void Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix);
 	
 	/// For setting the position of the model
-	void SetPosition( float posX, float posY, float posZ ) {position.x = posX; position.y = posY; position.z = posZ;}
+	void SetPosition( float posX, float posY, float posZ ) { position.x = posX; position.y = posY; position.z = posZ; }
 
 	/// For attaching a mesh to the local Mesh pointer
 	void AttachMesh(Mesh &meshObject);
 
 protected:
-
 	/// Object position vector
 	glm::vec3 position;
 
 	/// Euler angles for rotation
 	glm::vec3 rotation;
 
+	/// Object scale vector
+	glm::vec3 scale;
+
 	Mesh* mesh;
-	Shader* shader;
 };
 
 #endif

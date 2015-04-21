@@ -14,7 +14,9 @@
 GameObject::GameObject()
 {
 	mesh = NULL;
-	shader = new Shader();
+	position = glm::vec3(0, 0, 0);
+	rotation = glm::vec3(0, 0, 0);
+	scale = glm::vec3(1, 1, 1);
 }
 
 GameObject::~GameObject()
@@ -25,27 +27,27 @@ GameObject::~GameObject()
 void GameObject::Update(float dt)
 {
 	// update the rotation angle of our cube
-	rotation.y += dt * 0.5f;
-	while(rotation.y > (3.14159265358979323846 * 2.0))
-	{
-		rotation.y -= (3.14159265358979323846 * 2.0);
-	}
 
+	// if the gameobject has a mesh
 	if(mesh != NULL)
 	{
-		mesh->Update(position, rotation);
+		// update the meshes matrix
+		mesh->Update(position, rotation, scale);
 	}
 }
 
 void GameObject::Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix)
 {
+	// check to see if this gameobject has a mesh attached
 	if(mesh != NULL)
 	{
-		mesh->Draw(viewMatrix, projMatrix, shader);
+		// and draw the mesh
+		mesh->Draw(viewMatrix, projMatrix);
 	}
 }
 
 void GameObject::AttachMesh(Mesh &meshObject)
 {
+	// set the local pointer to a loaded mesh
 	mesh = &meshObject;
 }

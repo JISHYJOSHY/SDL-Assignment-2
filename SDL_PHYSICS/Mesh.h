@@ -1,70 +1,76 @@
-#ifndef _MESH_H_
-#define _MESH_H_
+#ifndef __MESH_H_
+#define __MESH_H_
 
 /// 
 /// Mesh.h
 /// SDL Assignment 2
-/// Class to hold mesh vertex data
-/// Created by Joshua Cook -- 2015
+/// This class contains data to handle mesh data from a loaded obj file
 /// 
 
 #include <glm.hpp>
 #include <SDL.h>
 #include <string>
-#include <vector>
 #include "glew.h"
+#include "ObjLoader.h"
 
-#include "Shader.h"
-#include "Material.h"
-
+/// Class to store and display a model
 class Mesh
 {
 public:
-	Mesh(std::string filename);
-	~Mesh(void);
+
+	/// Constructor calls InitialiseVAO and InitialiseShaders
+	Mesh(std::string objFileName);
+	~Mesh();
 	
-	/// Update the object based on an input pos and rotation
-	void Update(glm::vec3 pos, glm::vec3 rot);
-		
-	/// Draws object using the given camera view and projection matrices
-	void Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix, Shader *shader);
+	/// Load in a texture
+	void LoadTexture(const char* filename);
 
-private:	
 	/// Loads object model into OpenGL
-	void LoadMesh(std::string filename);
-	/// Loads a texture into a GLuint
-	unsigned int LoadImage(std::string filename);
+	void InitialiseVAO();
 
-	/// Create VAO
-	void CreateVAO();
+	/// Loads shaders for the object into OpenGL
+	void InitialiseShaders();
+
+	/// Currently just updates rotation to make the model rotate
+	void Update(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale);
+
+	/// Draws object using the given camera view and projection matrices
+	void Draw(glm::mat4& viewMatrix, glm::mat4& projMatrix);
+	
+protected:
+	// process an obj file
+	ObjLoader objLoader;
 
 	/// Vertex Array Object for model in OpenGL
 	GLuint VAO;
 
-	/// GLuint for texture data
-	std::vector<unsigned int> textures;
+	/// Shader program
+	GLuint shader;
 
-	/// Materials
-	std::vector<Material> materials;
-
-	/// Don't Know
-	bool mat, tex, norm;
-
-	/// Buffers	
-	GLuint positionBuffer;
-	GLuint normalBuffer;
-	GLuint uvBuffer;
+	/// Uniform locations
+	GLint shaderModelMatLocation, shaderViewMatLocation, shaderProjMatLocation;
 
 	/// Object's model matrix
 	/// This is rebuilt in the update function
 	glm::mat4 modelMatrix;
-
-	/// Number of vertices in the model
-	unsigned int numVertices;
 	
-	std::vector<glm::vec3> vertices;
-	std::vector<glm::vec3> normals;
-	std::vector<glm::vec2> uvs;
+	// opengl index for the loaded textures
+	GLuint diffuseTexID;
+	GLuint normalTexID;
+
+private:
+
+	// private buffers for the loaded model data
+	GLuint positionBuffer;
+	GLuint normalBuffer;
+	GLuint texCoordBuffer;
+	GLuint tangentBuffer;
+	GLuint biTangentBuffer;
+
+	std::string ReadFile(std::string fileName);
+
+	unsigned int numVertices;
 };
+
 
 #endif
