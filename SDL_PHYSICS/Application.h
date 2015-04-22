@@ -18,6 +18,9 @@
 #include "GameObject.h"
 #include "Camera.h"
 
+#include "Table.h"
+#include "Ball.h"
+
 class Application
 {
 public:
@@ -40,9 +43,11 @@ private:
 	SDL_GLContext glcontext;
 
 	SDL_Input* input;
-	GameObject* test;
 	Camera* camera;
-	Mesh* mesh;
+
+	Table* gameTable;
+
+	std::vector<Ball*> balls;
 
 	int winWidth;
 	int winHeight;
