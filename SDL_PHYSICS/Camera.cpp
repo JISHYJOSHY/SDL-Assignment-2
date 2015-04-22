@@ -26,9 +26,29 @@ Camera::~Camera(void)
 {
 }
 
+void Camera::Orbit(glm::vec3 position, float distance)
+{
+	this->position = position;
+
+	// Up
+	glm::vec3 direction( cos(pitch) * sin(yaw), sin(pitch), cos(pitch) * cos(yaw));
+
+	// Right vector
+	glm::vec3 right = glm::vec3(sin(yaw - 3.14f/2.0f), 0, cos(yaw - 3.14f/2.0f));	
+
+	// Up vector
+	glm::vec3 up = glm::cross(right, direction);
+
+	this->position -= direction * distance;
+	
+	projectionMatrix = glm::perspective(fov, 16.0f / 9.0f, 0.1f, 100.0f);
+
+	viewMatrix  = glm::lookAt(this->position, this->position + direction, up);
+}
+
 void Camera::Update(SDL_Input* input, SDL_Window* window, float dt)
 {	
-	Restrain();
+	//Restrain();
 	// store the window size for later
 	int width, height;
 	SDL_GetWindowSize(window, &width, &height);

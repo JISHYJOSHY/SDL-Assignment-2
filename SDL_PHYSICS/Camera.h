@@ -23,6 +23,8 @@ public:
 	inline glm::mat4 getProjectionMatrix() { return projectionMatrix; };
 	void Update(SDL_Input* input, SDL_Window* window, float dt);
 
+	void Orbit(glm::vec3 position, float distance);
+
 	inline void setFOV(int i) { fov = i; };
 	inline void setPosition(glm::vec3 pos) { position = pos; };
 	inline void setPosition(float x, float y, float z) { position = glm::vec3(x, y, z); };

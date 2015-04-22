@@ -27,6 +27,9 @@ public:
 	/// For setting the position of the model
 	void SetPosition( float posX, float posY, float posZ ) { position.x = posX; position.y = posY; position.z = posZ; }
 
+	inline glm::vec3 getPosition() { return position; };
+	inline glm::vec3 getRotation() { return rotation; };
+	inline glm::vec3 getScale() { return scale; };
 	/// For attaching a mesh to the local Mesh pointer
 	void AttachMesh(Mesh &meshObject);
 
@@ -41,6 +44,8 @@ protected:
 	glm::vec3 scale;
 
 	Mesh* mesh;
+
+	void UpdateObject();
 };
 
 #endif

@@ -21,19 +21,11 @@ GameObject::GameObject()
 
 GameObject::~GameObject()
 {
-	// TODO: destroy VAO, shaders etc
+	delete mesh;
 }
 
 void GameObject::Update(float dt)
 {
-	// update the rotation angle of our cube
-
-	// if the gameobject has a mesh
-	if(mesh != NULL)
-	{
-		// update the meshes matrix
-		mesh->Update(position, rotation, scale);
-	}
 }
 
 void GameObject::Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix)
@@ -50,4 +42,16 @@ void GameObject::AttachMesh(Mesh &meshObject)
 {
 	// set the local pointer to a loaded mesh
 	mesh = &meshObject;
+}
+
+void GameObject::UpdateObject()
+{
+	// update the mesh attached
+
+	// if the gameobject has a mesh
+	if(mesh != NULL)
+	{
+		// update the meshes matrix
+		mesh->Update(position, rotation, scale);
+	}
 }
