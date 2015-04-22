@@ -17,6 +17,21 @@ class Material
 public:
 	Material(std::string matName, float a, float Ns, float Ni, float* dif, float* amb, float* spec, int illum, int tex);
 	~Material(void);
+	
+	// get name and index
+	inline std::string getName() { return name; };
+	inline int getID() { return texture; };
+
+	// get mat properties
+	inline float* getDiffuse() { return diffuse; };
+	inline float* getAmbient() { return ambient; };
+	inline float* getSpecular() { return specular; };
+
+	// get other information
+	inline float getAlpha() { return alpha; };
+	inline float getNS() { return ns; };
+	inline float getNI() { return ni; };
+	inline int getIllumination() { return illumination; };
 
 private:
 	std::string name;
