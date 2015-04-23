@@ -49,6 +49,8 @@ private:
 	std::vector<glm::vec2> objFileTexCoords;
 	std::vector<Vertex> vertices;
 
+	void Clean();
+
 	//extracts bits of an obj file into the above std::vectors
 	void ReadObjFileData(FILE* objFile);
 

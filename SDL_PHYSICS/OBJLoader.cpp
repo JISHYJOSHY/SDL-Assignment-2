@@ -7,6 +7,19 @@ ObjLoader::ObjLoader()
 
 ObjLoader::~ObjLoader()
 {
+	meshVertices.clear();
+	meshTexCoords.clear();
+	meshNormals.clear();
+	meshBiTangents.clear();
+	meshTangents.clear();
+}
+
+void ObjLoader::Clean()
+{
+	objFileVerts.clear();
+	objFileNormals.clear();
+	objFileTexCoords.clear();
+	vertices.clear();
 }
 
 void ObjLoader::Load(std::string objFileName)
@@ -56,6 +69,7 @@ void ObjLoader::ReadObjFileData(FILE* objFile)
 		{
 			glm::vec2 texCoord;
 			fscanf_s(objFile, "%f %f\n", &texCoord.x, &texCoord.y);
+			texCoord.y = 1 - texCoord.y;
 			objFileTexCoords.push_back(texCoord);
 		}
 		// if the line contains a face
@@ -111,6 +125,8 @@ void ObjLoader::BuildMeshDataVectors()
 				meshTexCoords.push_back(glm::vec2(0, 0));
 		}
 	}
+
+	Clean();
 }
 
 /// Extract Face Data.
