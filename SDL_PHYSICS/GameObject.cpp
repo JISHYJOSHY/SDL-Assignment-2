@@ -14,6 +14,7 @@
 GameObject::GameObject()
 {
 	mesh = NULL;
+	texID = NULL;
 	position = glm::vec3(0, 0, 0);
 	rotation = glm::vec3(0, 0, 0);
 	scale = glm::vec3(1, 1, 1);
@@ -42,6 +43,12 @@ void GameObject::AttachMesh(Mesh &meshObject)
 {
 	// set the local pointer to a loaded mesh
 	mesh = &meshObject;
+}
+
+void GameObject::UseTexture(Texture &textureFile)
+{
+	// set the local pointer to a loaded texture
+	texture = &textureFile;
 }
 
 void GameObject::UpdateObject()

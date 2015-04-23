@@ -38,7 +38,6 @@ Mesh::Mesh(std::string objFileName)
 	// Initialise variables
 	VAO = 0;
 	shader = 0;
-	shaderModelMatLocation = shaderViewMatLocation = shaderProjMatLocation = 0;
 
 	objLoader.Load(objFileName);
 
@@ -93,10 +92,10 @@ void Mesh::InitialiseVAO()
 void Mesh::InitialiseShaders()
 {	
 	// This is the vertex shader being loaded from file
-	std::string VertexShaderCode = ReadFile("Shaders/basicVert.vert");
+	std::string VertexShaderCode = ReadFile("Shaders/basicLight.vert");
 	
 	// This is the fragment shader
-	std::string FragShaderCode = ReadFile("Shaders/basicFrag.frag");
+	std::string FragShaderCode = ReadFile("Shaders/basicLight.frag");
 
 	// The 'program' stores the shaders
 	shader = glCreateProgram();
@@ -146,27 +145,23 @@ void Mesh::InitialiseShaders()
 	}
 	
 	// We need to setup our ID so they can work with our shaders
-	MatrixID = glGetUniformLocation(shader, "MVP");
-	ViewMatrixID = glGetUniformLocation(shader, "V");
-	ModelMatrixID = glGetUniformLocation(shader, "M");
+	matrixID = glGetUniformLocation(shader, "MVP");
+	viewMatrixID = glGetUniformLocation(shader, "V");
+	modelMatrixID = glGetUniformLocation(shader, "M");
 }
 void Mesh::Update(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale)
 {
-	// update the model matrix based on the 
-	modelMatrix = glm::translate(glm::mat4(1.0f), position);
-	//modelMatrix = glm::scale(modelMatrix, scale);
+	modelMatrix = glm::scale(modelMatrix, scale);
+
 	modelMatrix = glm::rotate(modelMatrix, rotation.x, glm::vec3(1,0,0));
 	modelMatrix = glm::rotate(modelMatrix, rotation.y, glm::vec3(0,1,0));
 	modelMatrix = glm::rotate(modelMatrix, rotation.z, glm::vec3(0,0,1));
+	
+	modelMatrix = glm::translate(glm::mat4(1.0f), position);
 }
 
 void Mesh::Draw(glm::mat4& viewMatrix, glm::mat4& projMatrix, Light& light)
 {
-	// Ok, here I like to indent drawing calls - it's just a personal style, you may not like it and that's fine ;)
-	// Generally you will need to be activating and deactivating OpenGL states
-	// I just find it visually easier if the activations / deactivations happen at different tab depths
-	// This can help when things get more complex
-
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_DEPTH_TEST);
 
@@ -180,12 +175,12 @@ void Mesh::Draw(glm::mat4& viewMatrix, glm::mat4& projMatrix, Light& light)
 
 			// Send our transformation to the currently bound shader, 
 			// in the "MVP" uniform
-			glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
-			glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &modelMatrix[0][0]);
-			glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &viewMatrix[0][0]);
+			glUniformMatrix4fv(matrixID, 1, GL_FALSE, &MVP[0][0]);
+			glUniformMatrix4fv(modelMatrixID, 1, GL_FALSE, &modelMatrix[0][0]);
+			glUniformMatrix4fv(viewMatrixID, 1, GL_FALSE, &viewMatrix[0][0]);
 			
-			GLuint LightID = glGetUniformLocation(shader, "LightPosition_worldspace");
-			glUniform3f(LightID, light.getPos().x, light.getPos().y, light.getPos().z);
+			GLuint lightID = glGetUniformLocation(shader, "LightPosition_worldspace");
+			glUniform3f(lightID, light.getPos().x, light.getPos().y, light.getPos().z);
 
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, diffuseTexID);
@@ -196,16 +191,16 @@ void Mesh::Draw(glm::mat4& viewMatrix, glm::mat4& projMatrix, Light& light)
 			glEnableVertexAttribArray(0);
 			glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
 			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+			
+			//vertex texture coordinate data read in from obj file
+			glEnableVertexAttribArray(1);
+			glBindBuffer(GL_ARRAY_BUFFER, texCoordBuffer);
+			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 			//vertex normal data read in from obj file
-			glEnableVertexAttribArray(1);
-			glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
-			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-			//vertex texture coordinate data read in from obj file
 			glEnableVertexAttribArray(2);
-			glBindBuffer(GL_ARRAY_BUFFER, texCoordBuffer);
-			glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+			glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 			// Tell OpenGL to draw it
 			// Must specify the type of geometry to draw and the number of vertices
@@ -222,7 +217,62 @@ void Mesh::Draw(glm::mat4& viewMatrix, glm::mat4& projMatrix, Light& light)
 	glUseProgram( 0 );
 }
 
+void Mesh::Draw(glm::mat4& viewMatrix, glm::mat4& projMatrix, Light& light, Texture* texture)
+{
+	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_DEPTH_TEST);
 
+	// Activate the shader program
+	glUseProgram( shader );
+
+		// Activate the VAO
+		glBindVertexArray( VAO );
+		
+			glm::mat4 MVP = projMatrix * viewMatrix * modelMatrix;
+
+			// Send our transformation to the currently bound shader, 
+			// in the "MVP" uniform
+			glUniformMatrix4fv(matrixID, 1, GL_FALSE, &MVP[0][0]);
+			glUniformMatrix4fv(modelMatrixID, 1, GL_FALSE, &modelMatrix[0][0]);
+			glUniformMatrix4fv(viewMatrixID, 1, GL_FALSE, &viewMatrix[0][0]);
+			
+			GLuint lightID = glGetUniformLocation(shader, "LightPosition_worldspace");
+			glUniform3f(lightID, light.getPos().x, light.getPos().y, light.getPos().z);
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, texture->getTexID());
+			int diffuseSampler = glGetUniformLocation(shader, "texSampler");
+			glUniform1i(diffuseSampler, 0);
+
+			//vertex position data read in from obj file
+			glEnableVertexAttribArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER, positionBuffer);
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+			
+			//vertex texture coordinate data read in from obj file
+			glEnableVertexAttribArray(1);
+			glBindBuffer(GL_ARRAY_BUFFER, texCoordBuffer);
+			glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+			//vertex normal data read in from obj file
+			glEnableVertexAttribArray(2);
+			glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+			glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+			// Tell OpenGL to draw it
+			// Must specify the type of geometry to draw and the number of vertices
+			glDrawArrays(GL_TRIANGLES, 0, numVertices);
+
+			glDisableVertexAttribArray(0);
+			glDisableVertexAttribArray(1);
+			glDisableVertexAttribArray(2);
+
+		// Unbind VAO
+		glBindVertexArray( 0 );
+	
+	// Technically we can do this, but it makes no real sense because we must always have a valid shader program to draw geometry
+	glUseProgram( 0 );
+}
 
 void Mesh::LoadTexture(const char* filename)
 {	

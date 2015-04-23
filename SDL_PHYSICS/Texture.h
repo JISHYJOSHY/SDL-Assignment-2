@@ -4,12 +4,13 @@
 /// 
 /// Texture.h
 /// SDL Assignment 2
-/// Class to load a texture into OpenGL
+/// This class operates to hold texture information
 /// Created by Joshua Cook -- 2015
 /// 
 
 #include <string>
 #include <SDL.h>
+#include "glew.h"
 
 class Texture
 {
@@ -17,12 +18,12 @@ public:
 	Texture(std::string filename);
 	~Texture(void);
 
-	unsigned int Get() { return textureID; };
+	inline unsigned int getTexID() { return texID; };
 
 private:
-	void LoadImage(std::string filename);
+	void LoadTexture(std::string filename);
 
-	unsigned int textureID;
+	unsigned int texID;
 };
 
 #endif

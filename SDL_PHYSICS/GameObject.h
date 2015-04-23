@@ -30,9 +30,13 @@ public:
 	inline glm::vec3 getPosition() { return position; };
 	inline glm::vec3 getRotation() { return rotation; };
 	inline glm::vec3 getScale() { return scale; };
+
 	/// For attaching a mesh to the local Mesh pointer
 	void AttachMesh(Mesh &meshObject);
+	void UseTexture(Texture &textureFile);
+
 	inline Mesh getMesh() { return *mesh; };
+	inline GLuint getTexID() { return texID; };
 
 protected:
 	/// Object position vector
@@ -44,7 +48,9 @@ protected:
 	/// Object scale vector
 	glm::vec3 scale;
 
+	/// Pointers to existing meshes and textures
 	Mesh* mesh;
+	Texture* texture;
 
 	void UpdateObject();
 };

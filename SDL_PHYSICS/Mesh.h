@@ -14,6 +14,7 @@
 #include "ObjLoader.h"
 #include "BoundingBox.h"
 #include "LightSource.h"
+#include "Texture.h"
 
 /// Class to store and display a model
 class Mesh
@@ -38,6 +39,9 @@ public:
 
 	/// Draws object using the given camera view and projection matrices
 	void Draw(glm::mat4& viewMatrix, glm::mat4& projMatrix, Light& light);
+	
+	/// Draws object using the given camera view and projection matrices with a loaded texture
+	void Draw(glm::mat4& viewMatrix, glm::mat4& projMatrix, Light& light, Texture* texture);
 
 	inline BoundingBox* getBB() { return bb; };
 	
@@ -51,9 +55,6 @@ protected:
 	/// Shader program
 	GLuint shader;
 
-	/// Uniform locations
-	GLint shaderModelMatLocation, shaderViewMatLocation, shaderProjMatLocation;
-
 	/// Object's model matrix
 	/// This is rebuilt in the update function
 	glm::mat4 modelMatrix;
@@ -62,9 +63,9 @@ protected:
 	GLuint diffuseTexID;
 	GLuint normalTexID;
 	// Get a handle for our "MVP" uniform
-	GLuint MatrixID;
-	GLuint ViewMatrixID;
-	GLuint ModelMatrixID;
+	GLuint matrixID;
+	GLuint viewMatrixID;
+	GLuint modelMatrixID;
 
 private:
 	// private buffers for the loaded model data
