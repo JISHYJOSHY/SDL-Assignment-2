@@ -28,13 +28,13 @@ void GameObject::Update(float dt)
 {
 }
 
-void GameObject::Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix)
+void GameObject::Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix, Light light)
 {
 	// check to see if this gameobject has a mesh attached
 	if(mesh != NULL)
 	{
 		// and draw the mesh
-		mesh->Draw(viewMatrix, projMatrix);
+		mesh->Draw(viewMatrix, projMatrix, light);
 	}
 }
 

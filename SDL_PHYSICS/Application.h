@@ -21,6 +21,8 @@
 #include "Table.h"
 #include "Ball.h"
 
+#include "LightSource.h"
+
 class Application
 {
 public:
@@ -44,6 +46,7 @@ private:
 
 	SDL_Input* input;
 	Camera* camera;
+	Light* light;
 
 	Table* gameTable;
 

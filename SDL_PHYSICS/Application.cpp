@@ -66,8 +66,8 @@ bool Application::init()
 	// features of OpenGL we wish to use
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_TEXTURE_2D);	
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
+	glDepthFunc(GL_LESS); 
+	glEnable(GL_CULL_FACE);
 
 	// and any extras for SDL
 	SDL_ShowCursor(false);
@@ -89,32 +89,68 @@ void Application::initObjects()
 	gameTable = new Table();
 
 	Mesh* table = new Mesh("Models/Table.obj");
-	table->LoadTexture("Textures/Wood1.bmp");
+	table->LoadTexture("Textures/Wood2.bmp");
 
 	Mesh* playArea = new Mesh("Models/PlayArea.obj");
-	playArea->LoadTexture("Textures/Cloth.bmp");
+	playArea->LoadTexture("Textures/Cloth2.bmp");
 
-	gameTable->Create(playArea, table);
-	
+	gameTable->Create(playArea, table);	
 
 	Mesh* ballMesh = new Mesh("Models/Ball.obj");
 	ballMesh->LoadTexture("Textures/CueBall.bmp");
 
 	/// Create the vector of game balls
-	for(unsigned int i = 0; i < 16; i++)
+	for(unsigned int i = 0; i < 1000; i++)
 	{
 		Ball* newBall = new Ball();
 
 		newBall->AttachMesh(*ballMesh);
-		//newBall->SetPosition(x, 10 - y, z);
+		newBall->SetPosition((rand() % 80 - 40) / 10.f, (rand() % 700) / 10.f, (rand() % 80 - 40) / 10.f);
 
-		newBall->Kick(glm::vec3(rand() % 10, rand() % 10, rand() % 10));
+		//newBall->Kick(glm::vec3(rand() % 3, rand() % 3, rand() % 3));
 
 		balls.push_back(newBall);
 	}
 
 
+
+	for(unsigned int i = 0; i < 16; i++)
+	{
+		if(i == 0)
+		{
+
+		}
+	}
+
+	/*
+	 for(i=0;i<balls->nr;i++){
+            if(i==0){
+                balls->ball[i].nr=0;
+            }else if(i==5){
+                balls->ball[i].nr=8;
+            }else{
+                int ok;
+                act = rand() % balls->nr;
+                do {
+                    ok=1;
+                    act = (act+1) % balls->nr;
+                    //fprintf(stderr,"   trying %d\n",act);
+                    for(j=0;j<i;j++){
+                        if( act==balls->ball[j].nr ){ ok=0; break; }
+                    }
+                    if( act == 8 || act == 0 ) ok=0;
+                } while(!ok);
+                balls->ball[i].nr=act;
+            }
+            //fprintf(stderr,"i=%d: ball#=%d\n",i,balls->ball[i].nr);
+        }
+
+
+	*/
+
 	camera = new Camera();
+
+	light = new Light();
 }
 
 /// Frame Step of Application.
@@ -127,12 +163,26 @@ void Application::Update(float dt)
 	input->Update();
 	
 	camera->Update(input, window, dt);
-	camera->Orbit(glm::vec3(0, 0, 0), 5);
+	camera->Orbit(glm::vec3(0, 0.2f, 0), 12);
+
+	// make the light slightly follow the camera
+	glm::vec3 lightPos = camera->getPosition();
+	lightPos.x = (lightPos.x / 2);
+	lightPos.y = 10;
+	lightPos.z = (lightPos.z / 3);
+	light->setPos(lightPos);
+
+	if(input->mouseClicked())
+		balls[0]->Kick((glm::normalize(camera->Direction()) * 1.2f));
 
 	unsigned int ballSize = balls.size();
 	for(int i = 0; i < ballSize; i++)
 	{
 		balls[i]->Update(balls, dt);
+
+		if(input->isKeyDown(SDLK_u))
+			balls[i]->Kick(glm::vec3(rand() % 3, rand() % 3, rand() % 3));
+
 		//balls[i]->Orbit(glm::vec3(0, 0, 0), dt);
 		//std::cout << balls[i]->getPosition().x << ", " << balls[i]->getPosition().y << ", " << balls[i]->getPosition().z << std::endl;
 	}
@@ -143,14 +193,13 @@ void Application::Update(float dt)
 /// Includes the drawing of entities in the application.
 void Application::Draw()
 {	
-
 	// draw objects using cameras perspective
-	gameTable->Draw(camera->getViewMatrix(), camera->getProjectionMatrix());
+	gameTable->Draw(camera->getViewMatrix(), camera->getProjectionMatrix(), *light);
 	
 	unsigned int ballSize = balls.size();
 	for(int i = 0; i < ballSize; i++)
 	{
-		balls[i]->Draw(camera->getViewMatrix(), camera->getProjectionMatrix());
+		balls[i]->Draw(camera->getViewMatrix(), camera->getProjectionMatrix(), *light);
 	}		
 
 	// do the render

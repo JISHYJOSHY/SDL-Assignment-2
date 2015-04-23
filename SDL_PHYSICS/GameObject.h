@@ -22,7 +22,7 @@ public:
 	void Update(float dt);
 
 	/// Draws object using the given camera view and projection matrices
-	void Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix);
+	void Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix, Light light);
 	
 	/// For setting the position of the model
 	void SetPosition( float posX, float posY, float posZ ) { position.x = posX; position.y = posY; position.z = posZ; }
@@ -32,6 +32,7 @@ public:
 	inline glm::vec3 getScale() { return scale; };
 	/// For attaching a mesh to the local Mesh pointer
 	void AttachMesh(Mesh &meshObject);
+	inline Mesh getMesh() { return *mesh; };
 
 protected:
 	/// Object position vector
