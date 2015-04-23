@@ -1,4 +1,3 @@
-
 #include "Mesh.h"
 
 #include <iostream>
@@ -6,6 +5,11 @@
 #include <gtc/type_ptr.hpp>
 #include <gtc/matrix_transform.hpp>
 
+/// 
+/// Mesh.cpp
+/// SDL Assignment 2
+/// This class contains data to handle mesh data from a loaded obj file
+/// 
 
 /// Check to see if the shader has compiled
 bool CheckShaderCompiled( GLint shader )
@@ -43,6 +47,9 @@ Mesh::Mesh(std::string objFileName)
 	
 	// Create the shaders
 	InitialiseShaders();
+
+	bb = new BoundingBox();
+	bb->Create(objLoader.GetMeshVertices());
 }
 
 Mesh::~Mesh()
@@ -137,29 +144,23 @@ void Mesh::InitialiseShaders()
 
 		return;
 	}
-
-	// We need to get the location of the uniforms in the shaders
-	// This is so that we can send the values to them from the application
-	// We do this in the following way: 
-	shaderModelMatLocation = glGetUniformLocation( shader, "modelMat" );
-	shaderViewMatLocation  = glGetUniformLocation( shader, "viewMat" );
-	shaderProjMatLocation  = glGetUniformLocation( shader, "projMat" );
-
+	
+	// We need to setup our ID so they can work with our shaders
+	MatrixID = glGetUniformLocation(shader, "MVP");
+	ViewMatrixID = glGetUniformLocation(shader, "V");
+	ModelMatrixID = glGetUniformLocation(shader, "M");
 }
-
 void Mesh::Update(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale)
 {
 	// update the model matrix based on the 
-	modelMatrix = glm::translate(glm::mat4(1.0f), position );
-
-	modelMatrix = glm::rotate(modelMatrix, rotation.x, glm::vec3(1, 0, 0));
-	modelMatrix = glm::rotate(modelMatrix, rotation.y, glm::vec3(0, 1, 0));
-	modelMatrix = glm::rotate(modelMatrix, rotation.z, glm::vec3(0, 0, 1));
-
-	modelMatrix = glm::scale(glm::mat4(1.0f), scale);
+	modelMatrix = glm::translate(glm::mat4(1.0f), position);
+	//modelMatrix = glm::scale(modelMatrix, scale);
+	modelMatrix = glm::rotate(modelMatrix, rotation.x, glm::vec3(1,0,0));
+	modelMatrix = glm::rotate(modelMatrix, rotation.y, glm::vec3(0,1,0));
+	modelMatrix = glm::rotate(modelMatrix, rotation.z, glm::vec3(0,0,1));
 }
 
-void Mesh::Draw(glm::mat4& viewMatrix, glm::mat4& projMatrix)
+void Mesh::Draw(glm::mat4& viewMatrix, glm::mat4& projMatrix, Light& light)
 {
 	// Ok, here I like to indent drawing calls - it's just a personal style, you may not like it and that's fine ;)
 	// Generally you will need to be activating and deactivating OpenGL states
@@ -174,16 +175,21 @@ void Mesh::Draw(glm::mat4& viewMatrix, glm::mat4& projMatrix)
 
 		// Activate the VAO
 		glBindVertexArray( VAO );
+		
+			glm::mat4 MVP = projMatrix * viewMatrix * modelMatrix;
 
-			// Send matrices to the shader as uniforms like this:
-			glUniformMatrix4fv(shaderModelMatLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix) );
-			glUniformMatrix4fv(shaderViewMatLocation, 1, GL_FALSE, glm::value_ptr(viewMatrix) );
-			glUniformMatrix4fv(shaderProjMatLocation, 1, GL_FALSE, glm::value_ptr(projMatrix) );
+			// Send our transformation to the currently bound shader, 
+			// in the "MVP" uniform
+			glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+			glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &modelMatrix[0][0]);
+			glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &viewMatrix[0][0]);
+			
+			GLuint LightID = glGetUniformLocation(shader, "LightPosition_worldspace");
+			glUniform3f(LightID, light.getPos().x, light.getPos().y, light.getPos().z);
 
-			//send the diffuse texture to the shader
-			int diffuseSampler = glGetUniformLocation(shader, "texSampler");
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, diffuseTexID);
+			int diffuseSampler = glGetUniformLocation(shader, "texSampler");
 			glUniform1i(diffuseSampler, 0);
 
 			//vertex position data read in from obj file

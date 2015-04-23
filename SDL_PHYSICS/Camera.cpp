@@ -31,19 +31,23 @@ void Camera::Orbit(glm::vec3 position, float distance)
 	this->position = position;
 
 	// Up
-	glm::vec3 direction( cos(pitch) * sin(yaw), sin(pitch), cos(pitch) * cos(yaw));
 
 	// Right vector
 	glm::vec3 right = glm::vec3(sin(yaw - 3.14f/2.0f), 0, cos(yaw - 3.14f/2.0f));	
 
 	// Up vector
-	glm::vec3 up = glm::cross(right, direction);
+	glm::vec3 up = glm::cross(right, Direction());
 
-	this->position -= direction * distance;
+	this->position -= Direction() * distance;
 	
 	projectionMatrix = glm::perspective(fov, 16.0f / 9.0f, 0.1f, 100.0f);
 
-	viewMatrix  = glm::lookAt(this->position, this->position + direction, up);
+	viewMatrix  = glm::lookAt(this->position, this->position + Direction(), up);
+}
+
+glm::vec3 Camera::Direction()
+{
+	return glm::vec3(cos(pitch) * sin(yaw), sin(pitch), cos(pitch) * cos(yaw));
 }
 
 void Camera::Update(SDL_Input* input, SDL_Window* window, float dt)
@@ -61,25 +65,22 @@ void Camera::Update(SDL_Input* input, SDL_Window* window, float dt)
 
     SDL_WarpMouseInWindow(window, width, height);       //move back the cursor to the center of the screen
 
-	// Direction vector
-	glm::vec3 direction( cos(pitch) * sin(yaw), sin(pitch), cos(pitch) * cos(yaw));
-	
 	// Right vector
 	glm::vec3 right = glm::vec3(sin(yaw - 3.14f/2.0f), 0, cos(yaw - 3.14f/2.0f));	
 
 	// Up vector
-	glm::vec3 up = glm::cross(right, direction);
+	glm::vec3 up = glm::cross(right, Direction());
 
 	// now we have the direction vectors, we can calulate movement
 	// Move forward
 	if (input->isKeyDown(SDLK_w))
 	{
-		position += direction * dt * speed;
+		position += Direction() * dt * speed;
 	}
 	// Move backward
 	if (input->isKeyDown(SDLK_s))
 	{
-		position -= direction * dt * speed;
+		position -= Direction() * dt * speed;
 	}
 	// Strafe right
 	if (input->isKeyDown(SDLK_d))
@@ -103,7 +104,7 @@ void Camera::Update(SDL_Input* input, SDL_Window* window, float dt)
 	}
 	projectionMatrix = glm::perspective(fov, 16.0f / 9.0f, 0.1f, 100.0f);
 
-	viewMatrix  = glm::lookAt(position,	position + direction, up);
+	viewMatrix  = glm::lookAt(position,	position + Direction(), up);
 }
 
 void Camera::Restrain()

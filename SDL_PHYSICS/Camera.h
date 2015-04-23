@@ -29,6 +29,8 @@ public:
 	inline void setPosition(glm::vec3 pos) { position = pos; };
 	inline void setPosition(float x, float y, float z) { position = glm::vec3(x, y, z); };
 
+	glm::vec3 Direction();
+
 private:
 	glm::vec3 position;
 	glm::mat4 viewMatrix;

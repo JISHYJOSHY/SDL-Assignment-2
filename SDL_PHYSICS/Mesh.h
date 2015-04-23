@@ -1,5 +1,5 @@
-#ifndef __MESH_H_
-#define __MESH_H_
+#ifndef _MESH_H_
+#define _MESH_H_
 
 /// 
 /// Mesh.h
@@ -12,6 +12,8 @@
 #include <string>
 #include "glew.h"
 #include "ObjLoader.h"
+#include "BoundingBox.h"
+#include "LightSource.h"
 
 /// Class to store and display a model
 class Mesh
@@ -35,7 +37,9 @@ public:
 	void Update(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale);
 
 	/// Draws object using the given camera view and projection matrices
-	void Draw(glm::mat4& viewMatrix, glm::mat4& projMatrix);
+	void Draw(glm::mat4& viewMatrix, glm::mat4& projMatrix, Light& light);
+
+	inline BoundingBox* getBB() { return bb; };
 	
 protected:
 	// process an obj file
@@ -57,9 +61,12 @@ protected:
 	// opengl index for the loaded textures
 	GLuint diffuseTexID;
 	GLuint normalTexID;
+	// Get a handle for our "MVP" uniform
+	GLuint MatrixID;
+	GLuint ViewMatrixID;
+	GLuint ModelMatrixID;
 
 private:
-
 	// private buffers for the loaded model data
 	GLuint positionBuffer;
 	GLuint normalBuffer;
@@ -69,6 +76,7 @@ private:
 
 	std::string ReadFile(std::string fileName);
 
+	BoundingBox* bb;
 	unsigned int numVertices;
 };
 
