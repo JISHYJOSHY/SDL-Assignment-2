@@ -1,5 +1,12 @@
 #include "Ball.h"
 
+/// 
+/// Ball.h
+/// SDL Assignment 2
+/// This class is to control the physics of the ball
+/// Created by Joshua Cook -- 2015
+/// 
+
 Ball::Ball(void)
 {
 	acceleration = glm::vec3(0, 0, 0);
@@ -26,25 +33,18 @@ void Ball::Update(std::vector<Ball*>& balls, float dt)
 	position += acceleration * dt;
 	acceleration *= 0.99f;
 
-	// Temporary bounding box
-	if(position.y + acceleration.y * dt < 0.8f)
-	{
-		position -= acceleration * dt;
-		acceleration.y *= -1;
-	}
 
-	if(position.x + acceleration.x * dt > 1.9f
-	|| position.x + acceleration.x * dt < -1.9f)
+	if(position.x + acceleration.x * dt < 1.9f
+	|| position.x + acceleration.x * dt > -1.9f
+	|| position.z + acceleration.z * dt < 3.9f
+	|| position.z + acceleration.z * dt > -3.9f)
 	{
-		position -= acceleration * dt;
-		acceleration.x *= -1;
-	}
-	
-	if(position.z + acceleration.z * dt > 3.9f
-	|| position.z + acceleration.z * dt < -3.9f)
-	{
-		position -= acceleration * dt;
-		acceleration.z *= -1;
+	// Temporary bounding box
+		if(position.y + acceleration.y * dt < 0.6f)
+		{
+			position -= acceleration * dt;
+			acceleration.y *= -0.8f;
+		}
 	}
 
 	unsigned int ballSize = balls.size();
@@ -88,10 +88,10 @@ void Ball::Orbit(glm::vec3 pos, float dt)
 	acceleration -= direction * gravityForce * dt;
 }
 
-void Ball::Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix)
+void Ball::Draw(glm::mat4 viewMatrix, glm::mat4 projMatrix, Light light)
 {
 	UpdateObject();
-	mesh->Draw(viewMatrix, projMatrix);
+	mesh->Draw(viewMatrix, projMatrix, light);
 }
 
 bool Ball::isThis(Ball* ball)
